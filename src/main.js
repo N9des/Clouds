@@ -33,7 +33,7 @@ export default class Sketch {
 
 		this.addCamera();
 
-		this.addControls();
+		// this.addControls();
 
 		this.addMesh();
 
@@ -68,14 +68,14 @@ export default class Sketch {
 			20
 		);
 		this.camera.position.z = -1;
-		this.camera.lookAt(new THREE.Vector3(0, 0, 0));
+		this.camera.lookAt(0, 0, 200);
 	}
 
 	addMesh() {
-		this.fog = new THREE.Fog(0x4584b4, -100, 3000);
+		this.fog = new THREE.Fog(0x4584b4, 1, 20);
 		this.scene.fog = this.fog;
 
-		this.plane = new THREE.PlaneGeometry(1, 1);
+		this.plane = new THREE.PlaneGeometry(2, 2);
 
 		// this.material = new THREE.MeshBasicMaterial({
 		// 	side: THREE.DoubleSide,
@@ -120,8 +120,7 @@ export default class Sketch {
 	addAnim() {
 		const elapsedTime = this.clock.getElapsedTime();
 
-		this.camera.position.z = -(this.camera.position.z - elapsedTime) * 0.5;
-		console.log(this.camera.position.z);
+		this.camera.position.z = this.camera.position.z + 0.01;
 	}
 
 	resize() {
@@ -142,7 +141,7 @@ export default class Sketch {
 		this.addAnim();
 
 		// Update controls
-		this.controls.update();
+		// this.controls.update();
 
 		this.renderer.render(this.scene, this.camera);
 		window.requestAnimationFrame(this.render.bind(this));
