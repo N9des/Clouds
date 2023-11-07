@@ -23,6 +23,7 @@ export default class Sketch {
 		this.renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
 		this.utils = {
 			rand: (min, max) => Math.random() * (max - min) + min,
+			lerp: (s, e, v) => s * (1 - v) + e * v,
 		};
 
 		// Init scene
@@ -45,7 +46,8 @@ export default class Sketch {
 		this.lastY = 0;
 		this.deltaY = 0;
 		this.amount = 0;
-		this.multiplier = 0.008;
+		this.isScrolling = false;
+		this.multiplier = 0.1;
 
 		this.render();
 
@@ -68,13 +70,14 @@ export default class Sketch {
 	}
 
 	adjustMixers(deltaY) {
-		this.deltaY = deltaY;
-		this.speed = deltaY > 0 ? 100 : -100;
+		this.deltaY = Math.round(deltaY) * 0.01;
+		this.speed = deltaY > 0 ? 1 : -1;
 		this.amount = this.clock.getDelta() * this.speed;
 		this.multiplier = this.amount / 10;
 	}
 	onWheel(e) {
 		e.preventDefault();
+		this.isScrolling = true;
 		this.adjustMixers(e.deltaY);
 	}
 
@@ -163,10 +166,14 @@ export default class Sketch {
 		const elapsedTime = this.clock.getElapsedTime();
 
 		// Flying camera
-		this.camera.position.z = this.camera.position.z + this.multiplier;
+		if (this.deltaY !== 0) {
+			this.camera.position.z = this.camera.position.z + this.deltaY;
+		}
 		//  Reset camera position
 		if (this.camera.position.z > 95) {
 			this.camera.position.z = -1;
+		} else if (this.camera.position.z < -1) {
+			this.camera.position.z = 95;
 		}
 	}
 
