@@ -42,11 +42,53 @@ export default class Sketch {
 		// Init values
 		this.time = 0;
 		this.clock = new THREE.Clock();
+		this.lastY = 0;
+		this.deltaY = 0;
+		this.amount = 0;
+		this.multiplier = 0.008;
 
 		this.render();
 
 		// Resize
 		window.addEventListener('resize', this.resize.bind(this));
+
+		window.addEventListener('wheel', this.onWheel.bind(this), {
+			passive: false,
+		});
+
+		if ('ontouchstart' in window) {
+			console.log('ontouchstart');
+			window.addEventListener('touchstart', this.onTouchStart.bind(this), {
+				passive: false,
+			});
+			window.addEventListener('touchmove', this.onTouchMove.bind(this), {
+				passive: false,
+			});
+		}
+	}
+
+	adjustMixers(deltaY) {
+		this.deltaY = deltaY;
+		this.speed = deltaY > 0 ? 100 : -100;
+		this.amount = this.clock.getDelta() * this.speed;
+		this.multiplier = this.amount / 10;
+	}
+	onWheel(e) {
+		e.preventDefault();
+		this.adjustMixers(e.deltaY);
+	}
+
+	onTouchStart(e) {
+		e.preventDefault();
+		this.lastY = e.touches[0].pageY;
+	}
+
+	onTouchMove(e) {
+		e.preventDefault();
+		const currentY = e.touches[0].pageY;
+		const deltaY = this.lastY - currentY;
+		this.lastY = currentY;
+		this.adjustMixers(deltaY);
 	}
 
 	addLoader() {
@@ -120,7 +162,12 @@ export default class Sketch {
 	addAnim() {
 		const elapsedTime = this.clock.getElapsedTime();
 
-		this.camera.position.z = this.camera.position.z + 0.01;
+		// Flying camera
+		this.camera.position.z = this.camera.position.z + this.multiplier;
+		//  Reset camera position
+		if (this.camera.position.z > 95) {
+			this.camera.position.z = -1;
+		}
 	}
 
 	resize() {
