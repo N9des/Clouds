@@ -1,6 +1,7 @@
 import * as THREE from 'three';
 import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls.js';
 import * as dat from 'lil-gui';
+import Lenis from '@studio-freight/lenis';
 
 import vertexShader from './shaders/vertex.glsl';
 import fragmentShader from './shaders/fragment.glsl';
@@ -21,14 +22,24 @@ export default class Sketch {
 		});
 		this.renderer.setSize(this.sizes.width, this.sizes.height);
 		this.renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+		// Utils
 		this.utils = {
 			rand: (min, max) => Math.random() * (max - min) + min,
 			lerp: (s, e, v) => s * (1 - v) + e * v,
+			clamp: (num, min, max) => Math.min(Math.max(num, min), max),
 		};
+		// Init values
+		this.time = 0;
+		this.clock = new THREE.Clock();
+		this.sceneDepth = 100;
+		this.scroll = 0;
 
 		// Init scene
 		this.scene = new THREE.Scene();
 		this.scene.background = new THREE.Color('#7FB2F0');
+
+		// Init Lenis
+		this.initLenis();
 
 		this.addLoader();
 
@@ -36,62 +47,33 @@ export default class Sketch {
 
 		// this.addControls();
 
-		this.addMesh();
+		this.addClouds();
 
 		this.addDebug();
-
-		// Init values
-		this.time = 0;
-		this.clock = new THREE.Clock();
-		this.lastY = 0;
-		this.deltaY = 0;
-		this.amount = 0;
-		this.isScrolling = false;
-		this.multiplier = 0.1;
 
 		this.render();
 
 		// Resize
 		window.addEventListener('resize', this.resize.bind(this));
+	}
 
-		window.addEventListener('wheel', this.onWheel.bind(this), {
-			passive: false,
+	initLenis() {
+		const lenis = new Lenis({
+			lerp: 0.015,
+			wheelMultiplier: 0.05,
+			smoothTouch: true,
 		});
 
-		if ('ontouchstart' in window) {
-			console.log('ontouchstart');
-			window.addEventListener('touchstart', this.onTouchStart.bind(this), {
-				passive: false,
-			});
-			window.addEventListener('touchmove', this.onTouchMove.bind(this), {
-				passive: false,
-			});
+		lenis.on('scroll', (e) => {
+			this.scroll = e.progress;
+		});
+
+		function raf(time) {
+			lenis.raf(time);
+			requestAnimationFrame(raf);
 		}
-	}
 
-	adjustMixers(deltaY) {
-		this.deltaY = Math.round(deltaY) * 0.01;
-		this.speed = deltaY > 0 ? 1 : -1;
-		this.amount = this.clock.getDelta() * this.speed;
-		this.multiplier = this.amount / 10;
-	}
-	onWheel(e) {
-		e.preventDefault();
-		this.isScrolling = true;
-		this.adjustMixers(e.deltaY);
-	}
-
-	onTouchStart(e) {
-		e.preventDefault();
-		this.lastY = e.touches[0].pageY;
-	}
-
-	onTouchMove(e) {
-		e.preventDefault();
-		const currentY = e.touches[0].pageY;
-		const deltaY = this.lastY - currentY;
-		this.lastY = currentY;
-		this.adjustMixers(deltaY);
+		requestAnimationFrame(raf);
 	}
 
 	addLoader() {
@@ -112,14 +94,11 @@ export default class Sketch {
 			0.01,
 			20
 		);
-		this.camera.position.z = -1;
+		this.camera.position.z = 0;
 		this.camera.lookAt(0, 0, 200);
 	}
 
-	addMesh() {
-		this.fog = new THREE.Fog(0x4584b4, 1, 20);
-		this.scene.fog = this.fog;
-
+	addClouds() {
 		this.plane = new THREE.PlaneGeometry(2, 2);
 
 		// this.material = new THREE.MeshBasicMaterial({
@@ -149,8 +128,8 @@ export default class Sketch {
 		for (let i = 0; i < this.count; i++) {
 			this.mesh = new THREE.Mesh(this.plane, this.material);
 			this.mesh.position.x = Math.random() * 20 - 10;
-			this.mesh.position.y = this.utils.rand(-1.5, -0.8);
-			this.mesh.position.z = this.utils.rand(-1, 100);
+			this.mesh.position.y = this.utils.rand(-2, -1.15);
+			this.mesh.position.z = this.utils.rand(-1, 110);
 			this.mesh.rotation.z = Math.random() * Math.PI;
 			this.mesh.scale.x = this.mesh.scale.y =
 				Math.random() * Math.random() * 1.5 + 0.5;
@@ -166,15 +145,7 @@ export default class Sketch {
 		const elapsedTime = this.clock.getElapsedTime();
 
 		// Flying camera
-		if (this.deltaY !== 0) {
-			this.camera.position.z = this.camera.position.z + this.deltaY;
-		}
-		//  Reset camera position
-		if (this.camera.position.z > 95) {
-			this.camera.position.z = -1;
-		} else if (this.camera.position.z < -1) {
-			this.camera.position.z = 95;
-		}
+		this.camera.position.z = this.scroll * this.sceneDepth;
 	}
 
 	resize() {

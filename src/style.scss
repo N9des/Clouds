@@ -9,16 +9,38 @@
 	padding: 0in;
 }
 
-body {
-	scroll-behavior: none;
-	background-color: #0101;
+html.lenis {
+  height: auto;
 }
 
-#app {
+.lenis.lenis-smooth {
+  scroll-behavior: auto;
+}
+
+.lenis.lenis-smooth [data-lenis-prevent] {
+  overscroll-behavior: contain;
+}
+
+.lenis.lenis-stopped {
+  overflow: hidden;
+}
+
+.lenis.lenis-scrolling iframe {
+  pointer-events: none;
+}
+
+body {
+	// scroll-behavior: none;
+	background-color: #0101;
+	height: 800dvh;
+	position: relative;
+}
+
+.webgl {
+	display: inline-block;
 	width: 100vw;
 	height: 100vh;
-}
-
-canvas {
-	display: block;
+	position: fixed;
+	top: 0;
+	left: 0;
 }

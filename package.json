@@ -12,6 +12,7 @@
     "vite": "^4.4.5"
   },
   "dependencies": {
+    "@studio-freight/lenis": "^1.0.27",
     "lil-gui": "^0.18.2",
     "prettier": "^3.0.3",
     "sass": "^1.68.0",
