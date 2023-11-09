@@ -32,7 +32,6 @@ export default class Sketch {
 		});
 		this.renderer.setSize(this.sizes.width, this.sizes.height);
 		this.renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
-		this.renderer.autoClear = false;
 		// Utils
 		this.utils = {
 			rand: (min, max) => Math.random() * (max - min) + min,
@@ -58,6 +57,7 @@ export default class Sketch {
 		this.speedsPos = [1, 0.8, 1.2, 1.4, 1.2];
 		this.speedsRot = [1, 1.1, 1.2, 1.4, 1.2];
 		this.lerpMultiplier = 0.005;
+		this.balloonGroup = new THREE.Group();
 
 		// Init scene
 		this.scene = new THREE.Scene();
@@ -67,19 +67,21 @@ export default class Sketch {
 		// Init Lenis
 		this.initLenis();
 
-		this.addCannonWorld();
-
-		this.addLoader();
-
 		this.addCamera();
 
 		this.addLights();
+
+		this.addRaycaster();
+
+		this.addCannonWorld();
+
+		this.addLoader();
 
 		// this.addControls();
 
 		this.addBg();
 
-		this.addClouds();
+		// this.addClouds();
 
 		this.initPost();
 
@@ -91,38 +93,38 @@ export default class Sketch {
 		window.addEventListener('resize', this.resize.bind(this));
 
 		// Mouse event
-		// window.addEventListener('mousedown', (event) => {
-		// 	this.mouseClick.x = (event.clientX / this.sizes.width) * 2 - 1;
-		// 	this.mouseClick.y = -(event.clientY / this.sizes.height) * 2 + 1;
-		// 	this.lerpMultiplier = 0.005;
+		window.addEventListener('mousedown', (event) => {
+			this.mouseClick.x = (event.clientX / this.sizes.width) * 2 - 1;
+			this.mouseClick.y = -(event.clientY / this.sizes.height) * 2 + 1;
+			this.lerpMultiplier = 0.005;
 
-		// 	this.found = this.getIntersect(this.mouseClick);
+			this.found = this.getIntersect(this.mouseClick);
 
-		// 	if (this.found.length > 0) {
-		// 		if (this.found[0].object.userData.draggable) {
-		// 			this.draggable = this.found[0].object.userData.id;
-		// 		}
-		// 	}
+			if (this.found.length > 0) {
+				if (this.found[0].object.userData.draggable) {
+					this.draggable = this.found[0].object.userData.id;
+				}
+			}
 
-		// 	this.down = true;
-		// });
+			this.down = true;
+		});
 
-		// window.addEventListener('mouseup', (event) => {
-		// 	if (this.draggable !== null) {
-		// 		this.lerpMultiplier = 0.05;
+		window.addEventListener('mouseup', (event) => {
+			if (this.draggable !== null) {
+				this.lerpMultiplier = 0.05;
 
-		// 		this.draggable = null;
+				this.draggable = null;
 
-		// 		setTimeout(() => {
-		// 			this.down = false;
-		// 		}, 1000);
-		// 	}
-		// });
+				setTimeout(() => {
+					this.down = false;
+				}, 1000);
+			}
+		});
 
-		// window.addEventListener('mousemove', (event) => {
-		// 	this.mouseMove.x = (event.clientX / this.sizes.width) * 2 - 1;
-		// 	this.mouseMove.y = -(event.clientY / this.sizes.height) * 2 + 1;
-		// });
+		window.addEventListener('mousemove', (event) => {
+			this.mouseMove.x = (event.clientX / this.sizes.width) * 2 - 1;
+			this.mouseMove.y = -(event.clientY / this.sizes.height) * 2 + 1;
+		});
 	}
 
 	initLenis() {
@@ -238,8 +240,8 @@ export default class Sketch {
 	addBalloon(mesh, posX = 0, index) {
 		// Create balloon
 		mesh.scale.set(0.3, 0.3, 0.3);
-		mesh.position.set(posX, 0, 0.8);
-		mesh.rotation.z = Math.PI * 2;
+		mesh.position.set(posX, 0, 0.4);
+		// mesh.rotation.z = Math.PI * 2;
 		mesh.userData.draggable = true;
 		mesh.userData.id = index;
 		this.scene.add(mesh);
@@ -276,7 +278,6 @@ export default class Sketch {
 		meshBody.position.x = mesh.position.x;
 		meshBody.position.y = mesh.position.y;
 		meshBody.position.z = mesh.position.z;
-		// meshBody.scale.set(0.3, 0.3, 0.3);
 		Object.assign(meshBody, { balloonID: index });
 		this.world.addBody(meshBody);
 		this.meshBodies.push(meshBody);
@@ -285,7 +286,7 @@ export default class Sketch {
 		const planeGeo = new THREE.PlaneGeometry(0.2, 0.2);
 		const planeMat = new THREE.MeshNormalMaterial();
 		const planeMesh = new THREE.Mesh(planeGeo, planeMat);
-		planeMesh.position.set(mesh.position.x, 0, mesh.position.z - 0.15);
+		planeMesh.position.set(mesh.position.x, 0, mesh.position.z);
 		planeMesh.visible = false;
 		this.scene.add(planeMesh);
 
@@ -410,7 +411,6 @@ export default class Sketch {
 	}
 
 	addClouds() {
-		const cloudsGroup = new THREE.Group();
 		const plane = new THREE.PlaneGeometry(2, 2);
 
 		// this.material = new THREE.MeshBasicMaterial({
@@ -445,9 +445,8 @@ export default class Sketch {
 			this.cloud.rotation.z = Math.random() * Math.PI;
 			this.cloud.scale.x = this.cloud.scale.y =
 				Math.random() * Math.random() * 1.5 + 0.5;
-			cloudsGroup.add(this.cloud);
+			this.scene.add(this.cloud);
 		}
-		this.scene.add(cloudsGroup);
 	}
 
 	addDebug() {
@@ -459,29 +458,29 @@ export default class Sketch {
 		const elapsedTime = this.clock.getElapsedTime();
 
 		// Balloon
-		// if (this.model) {
-		// 	this.children.forEach((child, idx) => {
-		// 		child.curr.x = this.utils.lerp(child.curr.x, child.targ.x, 0.5);
-		// 		child.curr.y = this.utils.lerp(child.curr.y, child.targ.y, 0.5);
-		// 		child.curr.z = this.utils.lerp(child.curr.z, child.targ.z, 0.5);
-		// 		child.curr.zRot = this.utils.lerp(
-		// 			child.curr.zRot,
-		// 			child.targ.zRot,
-		// 			0.5
-		// 		);
+		if (this.model) {
+			this.children.forEach((child, idx) => {
+				child.curr.x = this.utils.lerp(child.curr.x, child.targ.x, 0.5);
+				child.curr.y = this.utils.lerp(child.curr.y, child.targ.y, 0.5);
+				child.curr.z = this.utils.lerp(child.curr.z, child.targ.z, 0.5);
+				child.curr.zRot = this.utils.lerp(
+					child.curr.zRot,
+					child.targ.zRot,
+					0.5
+				);
 
-		// 		child.mesh.position.x = child.curr.x;
-		// 		child.mesh.position.y = child.curr.y;
-		// 		child.mesh.position.z = child.curr.z;
-		// 		child.mesh.rotation.z = child.curr.zRot;
-		// 	});
+				child.mesh.position.x = child.curr.x;
+				child.mesh.position.y = child.curr.y;
+				child.mesh.position.z = child.curr.z;
+				child.mesh.rotation.z = child.curr.zRot;
+			});
 
-		// 	this.staticAnim();
-		// 	// Grab/Drop anim
-		// 	this.dragObject();
-		// 	// Move Balloons out of drag
-		// 	this.moveBalloons();
-		// }
+			// this.staticAnim();
+			// Grab/Drop anim
+			this.dragObject();
+			// Move Balloons out of drag
+			this.moveBalloons();
+		}
 
 		// Flying camera
 		this.camera.position.z = this.scroll * this.sceneDepth;
@@ -516,7 +515,7 @@ export default class Sketch {
 		this.onAnim();
 
 		// Update controls
-		// this.controls.update();
+		this.controls && this.controls.update();
 
 		// Render
 		this.composer.render(this.scene, this.camera);
