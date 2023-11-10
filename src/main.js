@@ -41,7 +41,7 @@ export default class Sketch {
 		// Init values
 		this.time = 0;
 		this.clock = new THREE.Clock();
-		this.sceneDepth = 100;
+		this.sceneDepth = -100;
 		this.scroll = 0;
 		this.delta = 0;
 		this.down = false;
@@ -81,7 +81,7 @@ export default class Sketch {
 
 		this.addBg();
 
-		// this.addClouds();
+		this.addClouds();
 
 		this.initPost();
 
@@ -240,8 +240,7 @@ export default class Sketch {
 	addBalloon(mesh, posX = 0, index) {
 		// Create balloon
 		mesh.scale.set(0.3, 0.3, 0.3);
-		mesh.position.set(posX, 0, 0.4);
-		// mesh.rotation.z = Math.PI * 2;
+		mesh.position.set(posX, 0, -1);
 		mesh.userData.draggable = true;
 		mesh.userData.id = index;
 		this.scene.add(mesh);
@@ -378,13 +377,13 @@ export default class Sketch {
 
 	addCamera() {
 		this.camera = new THREE.PerspectiveCamera(
-			70,
+			90,
 			this.sizes.width / this.sizes.height,
 			0.01,
 			40
 		);
-		this.camera.position.z = 0;
-		this.camera.lookAt(0, 0, 200);
+		this.camera.position.z = -2;
+		// this.camera.lookAt(0, 0, -200);
 	}
 
 	addBg() {
@@ -393,6 +392,7 @@ export default class Sketch {
 		this.bgMaterial = new THREE.ShaderMaterial({
 			vertexShader: bgVertexShader,
 			fragmentShader: bgFragmentShader,
+			depthWrite: false,
 			uniforms: {
 				uTime: { value: 0 },
 				uSpeed: { value: 0.01 },
@@ -413,7 +413,7 @@ export default class Sketch {
 	addClouds() {
 		const plane = new THREE.PlaneGeometry(2, 2);
 
-		// this.material = new THREE.MeshBasicMaterial({
+		// const cloudsMaterial = new THREE.MeshBasicMaterial({
 		// 	side: THREE.DoubleSide,
 		// 	transparent: true,
 		// 	opacity: 0.9,
@@ -427,7 +427,7 @@ export default class Sketch {
 			vertexShader: cloudsVertexShader,
 			fragmentShader: cloudsFragmentShader,
 			transparent: true,
-			depthTest: false,
+			// depthTest: false,
 			depthWrite: false,
 			uniforms: {
 				uTexture: { value: this.cloudsTexture },
@@ -441,7 +441,7 @@ export default class Sketch {
 			this.cloud = new THREE.Mesh(plane, cloudsMaterial);
 			this.cloud.position.x = Math.random() * 20 - 10;
 			this.cloud.position.y = this.utils.rand(-2, -1.15);
-			this.cloud.position.z = this.utils.rand(-1, 110);
+			this.cloud.position.z = this.utils.rand(-110, 1);
 			this.cloud.rotation.z = Math.random() * Math.PI;
 			this.cloud.scale.x = this.cloud.scale.y =
 				Math.random() * Math.random() * 1.5 + 0.5;
@@ -451,7 +451,7 @@ export default class Sketch {
 
 	addDebug() {
 		const gui = new dat.GUI();
-		this.cannonDebugger = new CannonDebugger(this.scene, this.world, {});
+		// this.cannonDebugger = new CannonDebugger(this.scene, this.world, {});
 	}
 
 	onAnim() {
@@ -484,10 +484,12 @@ export default class Sketch {
 
 		// Flying camera
 		this.camera.position.z = this.scroll * this.sceneDepth;
-		this.bg.position.z = this.camera.position.z;
+		this.bg ? (this.bg.position.z = this.camera.position.z) : null;
 
 		// Update uTime shader uniform
-		this.bgMaterial.uniforms.uTime.value = elapsedTime;
+		this.bgMaterial
+			? (this.bgMaterial.uniforms.uTime.value = elapsedTime)
+			: null;
 	}
 
 	resize() {
@@ -500,9 +502,10 @@ export default class Sketch {
 		this.camera.updateProjectionMatrix();
 
 		// Update renderer
-		this.composer.setSize(this.sizes.width, this.sizes.height);
-		this.composer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
-		// this.renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+		// this.composer.setSize(this.sizes.width, this.sizes.height);
+		this.renderer.setSize(this.sizes.width, this.sizes.height);
+		// this.composer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+		this.renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
 	}
 
 	render() {
@@ -510,7 +513,7 @@ export default class Sketch {
 
 		// Update World
 		this.world.step(this.delta);
-		this.cannonDebugger.update();
+		this.cannonDebugger && this.cannonDebugger.update();
 
 		this.onAnim();
 
@@ -518,9 +521,10 @@ export default class Sketch {
 		this.controls && this.controls.update();
 
 		// Render
-		this.composer.render(this.scene, this.camera);
-		this.composer.outputColorSpace = THREE.LinearSRGBColorSpace;
-		// this.renderer.render(this.scene, this.camera);
+		// this.composer.render(this.scene, this.camera);
+		// this.composer.outputColorSpace = THREE.LinearSRGBColorSpace;
+		this.renderer.render(this.scene, this.camera);
+		this.renderer.outputColorSpace = THREE.LinearSRGBColorSpace;
 		window.requestAnimationFrame(this.render.bind(this));
 	}
 }
