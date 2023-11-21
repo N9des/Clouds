@@ -1,4 +1,7 @@
 import * as THREE from 'three';
+import { gsap } from 'gsap';
+import { ScrollTrigger } from 'gsap/ScrollTrigger';
+gsap.registerPlugin(ScrollTrigger);
 import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls.js';
 import { EffectComposer } from 'three/addons/postprocessing/EffectComposer.js';
 import { RenderPass } from 'three/addons/postprocessing/RenderPass.js';
@@ -40,6 +43,7 @@ export default class Sketch {
 		};
 		// Init values
 		this.time = 0;
+		this.elapsedTime = 0;
 		this.clock = new THREE.Clock();
 		this.sceneDepth = -100;
 		this.scroll = 0;
@@ -57,7 +61,8 @@ export default class Sketch {
 		this.speedsPos = [1, 0.8, 1.2, 1.4, 1.2];
 		this.speedsRot = [1, 1.1, 1.2, 1.4, 1.2];
 		this.lerpMultiplier = 0.005;
-		this.balloonGroup = new THREE.Group();
+		this.button = document.querySelector('.anim');
+		this.isStatic = true;
 
 		// Init scene
 		this.scene = new THREE.Scene();
@@ -124,6 +129,24 @@ export default class Sketch {
 		window.addEventListener('mousemove', (event) => {
 			this.mouseMove.x = (event.clientX / this.sizes.width) * 2 - 1;
 			this.mouseMove.y = -(event.clientY / this.sizes.height) * 2 + 1;
+		});
+	}
+
+	scrollTrigger() {
+		gsap.to(this.children[0].mesh.position, {
+			y: this.children[0].targ.y + 1,
+			x: this.children[0].targ.x + 1,
+			z: this.children[0].targ.z + 1,
+			scrollTrigger: {
+				trigger: this.canvas,
+				scrub: 1,
+				start: '+=5',
+				end: '+=75',
+				markers: true,
+				onToggle: () => {
+					this.isStatic = !this.isStatic;
+				},
+			},
 		});
 	}
 
@@ -199,6 +222,7 @@ export default class Sketch {
 			}
 
 			this.onAnim();
+			this.scrollTrigger();
 		});
 	}
 
@@ -240,10 +264,14 @@ export default class Sketch {
 	addBalloon(mesh, posX = 0, index) {
 		// Create balloon
 		mesh.scale.set(0.3, 0.3, 0.3);
-		mesh.position.set(posX, 0, -1);
+		mesh.position.set(posX, 0, -0.6);
 		mesh.userData.draggable = true;
 		mesh.userData.id = index;
+		mesh.material = new THREE.MeshPhongMaterial({
+			color: 0xa474e7,
+		});
 		this.scene.add(mesh);
+
 		// Add mesh to an array
 		this.children[index] = {
 			mesh,
@@ -276,7 +304,7 @@ export default class Sketch {
 		meshBody.addShape(meshShapeBottom, new CANNON.Vec3(0, -0.05, 0));
 		meshBody.position.x = mesh.position.x;
 		meshBody.position.y = mesh.position.y;
-		meshBody.position.z = mesh.position.z;
+		// meshBody.position.z = mesh.position.z;
 		Object.assign(meshBody, { balloonID: index });
 		this.world.addBody(meshBody);
 		this.meshBodies.push(meshBody);
@@ -301,7 +329,7 @@ export default class Sketch {
 		this.world.addBody(planeBody);
 
 		// Add constraint point between plane and balloon
-		const localPivotBox = new CANNON.Vec3(0, 0, -0.2);
+		const localPivotBox = new CANNON.Vec3(0, 0, 0.3);
 		const localPivotPlane = new CANNON.Vec3(0, 0, 0.2);
 		const constraints = new CANNON.PointToPointConstraint(
 			meshBody,
@@ -383,7 +411,6 @@ export default class Sketch {
 			40
 		);
 		this.camera.position.z = -2;
-		// this.camera.lookAt(0, 0, -200);
 	}
 
 	addBg() {
@@ -435,7 +462,7 @@ export default class Sketch {
 			side: THREE.DoubleSide,
 		});
 
-		this.count = 1800;
+		this.count = 2200;
 
 		for (let i = 0; i < this.count; i++) {
 			this.cloud = new THREE.Mesh(plane, cloudsMaterial);
@@ -450,36 +477,42 @@ export default class Sketch {
 	}
 
 	addDebug() {
-		const gui = new dat.GUI();
-		// this.cannonDebugger = new CannonDebugger(this.scene, this.world, {});
+		// const gui = new dat.GUI();
+		this.cannonDebugger = new CannonDebugger(this.scene, this.world, {});
 	}
 
 	onAnim() {
-		const elapsedTime = this.clock.getElapsedTime();
+		this.elapsedTime = this.clock.getElapsedTime();
+
+		console.log(this.isStatic);
 
 		// Balloon
 		if (this.model) {
-			this.children.forEach((child, idx) => {
-				child.curr.x = this.utils.lerp(child.curr.x, child.targ.x, 0.5);
-				child.curr.y = this.utils.lerp(child.curr.y, child.targ.y, 0.5);
-				child.curr.z = this.utils.lerp(child.curr.z, child.targ.z, 0.5);
-				child.curr.zRot = this.utils.lerp(
-					child.curr.zRot,
-					child.targ.zRot,
-					0.5
-				);
+			if (this.isStatic) {
+				this.children.forEach((child, idx) => {
+					child.curr.x = this.utils.lerp(child.curr.x, child.targ.x, 0.5);
+					child.curr.y = this.utils.lerp(child.curr.y, child.targ.y, 0.5);
+					child.curr.z = this.utils.lerp(child.curr.z, child.targ.z, 0.5);
+					child.curr.zRot = this.utils.lerp(
+						child.curr.zRot,
+						child.targ.zRot,
+						0.5
+					);
 
-				child.mesh.position.x = child.curr.x;
-				child.mesh.position.y = child.curr.y;
-				child.mesh.position.z = child.curr.z;
-				child.mesh.rotation.z = child.curr.zRot;
-			});
+					child.mesh.position.x = child.curr.x;
+					child.mesh.position.y = child.curr.y;
+					child.mesh.position.z = child.curr.z;
+					child.mesh.rotation.z = child.curr.zRot;
+				});
+				console.log(this.children);
 
-			// this.staticAnim();
-			// Grab/Drop anim
-			this.dragObject();
-			// Move Balloons out of drag
-			this.moveBalloons();
+				// Grab/Drop anim
+				this.dragObject();
+				// Move Balloons out of drag
+				this.moveBalloons();
+			}
+
+			this.staticAnim();
 		}
 
 		// Flying camera
@@ -488,7 +521,7 @@ export default class Sketch {
 
 		// Update uTime shader uniform
 		this.bgMaterial
-			? (this.bgMaterial.uniforms.uTime.value = elapsedTime)
+			? (this.bgMaterial.uniforms.uTime.value = this.elapsedTime)
 			: null;
 	}
 

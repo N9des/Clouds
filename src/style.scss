@@ -30,9 +30,11 @@ html.lenis {
 }
 
 body {
-	// scroll-behavior: none;
-	background-color: #0101;
 	height: 800dvh;
+}
+
+.wrapper {
+	background-color: #0101;
 	position: relative;
 }
 
