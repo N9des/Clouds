@@ -68,8 +68,6 @@ export default class Sketch {
 		this.scene = new THREE.Scene();
 		this.scene.background = new THREE.Color('#7FB2F0');
 		THREE.ColorManagement.enabled = false;
-		const axesHelper = new THREE.AxesHelper(1000);
-		this.scene.add(axesHelper);
 
 		// Init Lenis
 		this.initLenis();
