@@ -68,6 +68,8 @@ export default class Sketch {
 		this.scene = new THREE.Scene();
 		this.scene.background = new THREE.Color('#7FB2F0');
 		THREE.ColorManagement.enabled = false;
+		const axesHelper = new THREE.AxesHelper(1000);
+		this.scene.add(axesHelper);
 
 		// Init Lenis
 		this.initLenis();
@@ -133,26 +135,38 @@ export default class Sketch {
 	}
 
 	scrollTrigger() {
-		gsap.to(this.children[0].mesh.position, {
-			y: this.children[0].targ.y + 1,
-			x: this.children[0].targ.x + 1,
-			z: this.children[0].targ.z + 1,
-			scrollTrigger: {
-				trigger: this.canvas,
-				scrub: 1,
-				start: '+=5',
-				end: '+=75',
-				markers: true,
-				onToggle: () => {
-					this.isStatic = !this.isStatic;
+		const positions = [
+			{ y: 2, x: -2, z: 1 },
+			{ y: 1, x: -1, z: 1 },
+			{ y: 2, x: 0, z: 1 },
+			{ y: 2, x: 1, z: 2 },
+			{ y: 1, x: 2, z: 1 },
+		];
+
+		this.children.forEach((child, idx) => {
+			gsap.to(child.curr, {
+				y: child.targ.y + positions[idx].y,
+				x: child.targ.x + positions[idx].x,
+				z: child.targ.z + positions[idx].z,
+				scrollTrigger: {
+					trigger: this.canvas,
+					scrub: 1,
+					start: 'top',
+					end: '+=50',
+					snap: {
+						snapTo: 1,
+						duration: { min: 0.2, max: 0.8 },
+						ease: 'power1.inOut',
+					},
+					markers: true,
 				},
-			},
+			});
 		});
 	}
 
 	initLenis() {
 		const lenis = new Lenis({
-			lerp: 0.015,
+			lerp: 0.1,
 			wheelMultiplier: 0.05,
 			smoothTouch: true,
 		});
@@ -272,6 +286,55 @@ export default class Sketch {
 		});
 		this.scene.add(mesh);
 
+		// Add physics mesh on balloon
+		const meshShape = new CANNON.Sphere(0.11);
+		const meshShapeTop = new CANNON.Sphere(0.08);
+		const meshShapeBottom = new CANNON.Sphere(0.08);
+		const meshBody = new CANNON.Body({
+			mass: 1,
+			velocity: new CANNON.Vec3(0.1, 0.1, 0),
+			angularFactor: new CANNON.Vec3(0, 0, 0),
+		});
+		meshBody.addShape(meshShape, new CANNON.Vec3(0, 0, 0));
+		meshBody.addShape(meshShapeTop, new CANNON.Vec3(0, 0.05, 0));
+		meshBody.addShape(meshShapeBottom, new CANNON.Vec3(0, -0.05, 0));
+		meshBody.position.x = mesh.position.x;
+		meshBody.position.y = mesh.position.y;
+		meshBody.position.z = mesh.position.z;
+		Object.assign(meshBody, { balloonID: index });
+		this.world.addBody(meshBody);
+		this.meshBodies.push(meshBody);
+
+		// Add bg plane for balloon
+		const planeGeo = new THREE.PlaneGeometry(0.2, 0.2);
+		const planeMat = new THREE.MeshNormalMaterial();
+		const planeMesh = new THREE.Mesh(planeGeo, planeMat);
+		planeMesh.position.set(meshBody.position.x, meshBody.position.y, -0.6);
+		planeMesh.visible = false;
+		this.scene.add(planeMesh);
+
+		// Add physics to plane
+		const planeShape = new CANNON.Plane();
+		const planeBody = new CANNON.Body({
+			mass: 0,
+			shape: planeShape,
+		});
+		planeBody.position.x = planeMesh.position.x;
+		planeBody.position.y = planeMesh.position.y;
+		planeBody.position.z = planeMesh.position.z;
+		this.world.addBody(planeBody);
+
+		// Add constraint point between plane and balloon
+		const localPivotBody = new CANNON.Vec3(0, 0, 0.6);
+		const localPivotPlane = new CANNON.Vec3(0, 0, -planeBody.position.z);
+		const constraints = new CANNON.PointToPointConstraint(
+			meshBody,
+			localPivotBody,
+			planeBody,
+			localPivotPlane
+		);
+		this.world.addConstraint(constraints);
+
 		// Add mesh to an array
 		this.children[index] = {
 			mesh,
@@ -289,55 +352,6 @@ export default class Sketch {
 				zRot: mesh.rotation.z,
 			},
 		};
-
-		// Add physics mesh on balloon
-		const meshShape = new CANNON.Sphere(0.11);
-		const meshShapeTop = new CANNON.Sphere(0.08);
-		const meshShapeBottom = new CANNON.Sphere(0.08);
-		const meshBody = new CANNON.Body({
-			mass: 1,
-			velocity: new CANNON.Vec3(0.1, 0.1, 0),
-			angularFactor: new CANNON.Vec3(0, 0, 0),
-		});
-		meshBody.addShape(meshShape, new CANNON.Vec3(0, 0, 0));
-		meshBody.addShape(meshShapeTop, new CANNON.Vec3(0, 0.05, 0));
-		meshBody.addShape(meshShapeBottom, new CANNON.Vec3(0, -0.05, 0));
-		meshBody.position.x = mesh.position.x;
-		meshBody.position.y = mesh.position.y;
-		// meshBody.position.z = mesh.position.z;
-		Object.assign(meshBody, { balloonID: index });
-		this.world.addBody(meshBody);
-		this.meshBodies.push(meshBody);
-
-		// Add bg plane for balloon
-		const planeGeo = new THREE.PlaneGeometry(0.2, 0.2);
-		const planeMat = new THREE.MeshNormalMaterial();
-		const planeMesh = new THREE.Mesh(planeGeo, planeMat);
-		planeMesh.position.set(mesh.position.x, 0, mesh.position.z);
-		planeMesh.visible = false;
-		this.scene.add(planeMesh);
-
-		// Add physics to plane
-		const planeShape = new CANNON.Plane();
-		const planeBody = new CANNON.Body({
-			mass: 0,
-			shape: planeShape,
-		});
-		planeBody.position.x = planeMesh.position.x;
-		planeBody.position.y = planeMesh.position.y;
-		planeBody.position.z = planeMesh.position.z;
-		this.world.addBody(planeBody);
-
-		// Add constraint point between plane and balloon
-		const localPivotBox = new CANNON.Vec3(0, 0, 0.3);
-		const localPivotPlane = new CANNON.Vec3(0, 0, 0.2);
-		const constraints = new CANNON.PointToPointConstraint(
-			meshBody,
-			localPivotBox,
-			planeBody,
-			localPivotPlane
-		);
-		this.world.addConstraint(constraints);
 	}
 
 	getIntersect(pos) {
@@ -410,7 +424,6 @@ export default class Sketch {
 			0.01,
 			40
 		);
-		this.camera.position.z = -2;
 	}
 
 	addBg() {
@@ -478,40 +491,35 @@ export default class Sketch {
 
 	addDebug() {
 		// const gui = new dat.GUI();
-		this.cannonDebugger = new CannonDebugger(this.scene, this.world, {});
+		// this.cannonDebugger = new CannonDebugger(this.scene, this.world, {});
 	}
 
 	onAnim() {
 		this.elapsedTime = this.clock.getElapsedTime();
 
-		console.log(this.isStatic);
-
 		// Balloon
 		if (this.model) {
-			if (this.isStatic) {
-				this.children.forEach((child, idx) => {
-					child.curr.x = this.utils.lerp(child.curr.x, child.targ.x, 0.5);
-					child.curr.y = this.utils.lerp(child.curr.y, child.targ.y, 0.5);
-					child.curr.z = this.utils.lerp(child.curr.z, child.targ.z, 0.5);
-					child.curr.zRot = this.utils.lerp(
-						child.curr.zRot,
-						child.targ.zRot,
-						0.5
-					);
+			this.children.forEach((child) => {
+				child.curr.x = this.utils.lerp(child.curr.x, child.targ.x, 0.5);
+				child.curr.y = this.utils.lerp(child.curr.y, child.targ.y, 0.5);
+				child.curr.z = this.utils.lerp(child.curr.z, child.targ.z, 0.5);
+				child.curr.zRot = this.utils.lerp(
+					child.curr.zRot,
+					child.targ.zRot,
+					0.5
+				);
 
-					child.mesh.position.x = child.curr.x;
-					child.mesh.position.y = child.curr.y;
-					child.mesh.position.z = child.curr.z;
-					child.mesh.rotation.z = child.curr.zRot;
-				});
-				console.log(this.children);
+				child.mesh.position.x = child.curr.x;
+				child.mesh.position.y = child.curr.y;
+				child.mesh.position.z = child.curr.z;
+				child.mesh.rotation.z = child.curr.zRot;
+			});
 
-				// Grab/Drop anim
-				this.dragObject();
-				// Move Balloons out of drag
-				this.moveBalloons();
-			}
-
+			// Grab/Drop anim
+			this.dragObject();
+			// Move Balloons out of drag
+			this.moveBalloons();
+			// Static anim
 			this.staticAnim();
 		}
 
