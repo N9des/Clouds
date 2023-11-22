@@ -168,6 +168,7 @@ export default class Sketch {
 		const lenis = new Lenis({
 			lerp: 0.1,
 			wheelMultiplier: 0.05,
+			touchMultiplier: 0.05,
 			smoothTouch: true,
 		});
 
