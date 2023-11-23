@@ -1,0 +1,17 @@
+$humane-path: '../fonts/humane';
+
+@font-face {
+  font-family: 'Humane';
+  src: url("#{$humane-path}/Humane-Regular.woff") format('woff'), url("#{$humane-path}/Humane-Regular.woff2") format('woff2');
+
+  font-family: "Humane";
+  font-weight: 400;
+}
+
+@font-face {
+  font-family: 'Humane';
+  src: url("#{$humane-path}/Humane-Bold.woff") format('woff'), url("#{$humane-path}/Humane-Bold.woff2") format('woff2');
+
+  font-family: "Humane";
+  font-weight: 700;
+}

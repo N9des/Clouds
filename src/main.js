@@ -7,6 +7,8 @@ import { EffectComposer } from 'three/addons/postprocessing/EffectComposer.js';
 import { RenderPass } from 'three/addons/postprocessing/RenderPass.js';
 import { ShaderPass } from 'three/addons/postprocessing/ShaderPass.js';
 import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
+import { TextGeometry } from 'three/addons/geometries/TextGeometry.js';
+import { FontLoader } from 'three/addons/loaders/FontLoader.js';
 import * as CANNON from 'cannon-es';
 import CannonDebugger from 'cannon-es-debugger';
 import * as dat from 'lil-gui';
@@ -18,6 +20,8 @@ import cloudsVertexShader from './shaders/cloudsVertex.glsl';
 import cloudsFragmentShader from './shaders/cloudsFragment.glsl';
 import bgVertexShader from './shaders/bgVertex.glsl';
 import bgFragmentShader from './shaders/bgFragment.glsl';
+
+import humane from './fonts/humane.json';
 
 export default class Sketch {
 	constructor() {
@@ -236,6 +240,7 @@ export default class Sketch {
 
 			this.onAnim();
 			this.scrollTrigger();
+			this.textGeometry();
 		});
 	}
 
@@ -274,14 +279,36 @@ export default class Sketch {
 		this.scene.add(this.ambientLight);
 	}
 
+	textGeometry() {
+		this.fontLoader = new FontLoader();
+		this.fontLoader.load(humane, (font) => {
+			const textGeometry = new TextGeometry('Creative', {
+				font,
+				size: 80,
+				height: 5,
+				curveSegments: 12,
+				bevelEnabled: true,
+				bevelThickness: 10,
+				bevelSize: 8,
+				bevelOffset: 0,
+				bevelSegments: 5,
+			});
+
+			textGeometry.position.set(0, 0, 4);
+			this.scene.add(textGeometry);
+		});
+	}
+
 	addBalloon(mesh, posX = 0, index) {
 		// Create balloon
 		mesh.scale.set(0.3, 0.3, 0.3);
 		mesh.position.set(posX, 0, -0.6);
 		mesh.userData.draggable = true;
 		mesh.userData.id = index;
-		mesh.material = new THREE.MeshPhongMaterial({
-			color: 0xa474e7,
+		mesh.material = new THREE.MeshStandardMaterial({
+			color: 0x7b79eb,
+			metalness: 0.3,
+			roughness: 0.4,
 		});
 		this.scene.add(mesh);
 

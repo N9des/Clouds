@@ -1,0 +1,17 @@
+body {
+	height: 800dvh;
+}
+
+.wrapper {
+	background-color: #0101;
+	position: relative;
+}
+
+.webgl {
+	display: inline-block;
+	width: 100vw;
+	height: 100vh;
+	position: fixed;
+	top: 0;
+	left: 0;
+}
