@@ -20,6 +20,7 @@
     "prettier": "^3.0.3",
     "sass": "^1.68.0",
     "three": "^0.156.1",
+    "three-msdf-text-utils": "^1.1.6",
     "vite-plugin-glsl": "^1.1.2"
   }
 }
