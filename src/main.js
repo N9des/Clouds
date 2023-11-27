@@ -8,7 +8,6 @@ import { EffectComposer } from 'three/addons/postprocessing/EffectComposer.js';
 import { RenderPass } from 'three/addons/postprocessing/RenderPass.js';
 import { ShaderPass } from 'three/addons/postprocessing/ShaderPass.js';
 import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
-import { FontLoader } from 'three/addons/loaders/FontLoader.js';
 import * as CANNON from 'cannon-es';
 import CannonDebugger from 'cannon-es-debugger';
 import * as dat from 'lil-gui';
@@ -65,6 +64,7 @@ export default class Sketch {
 		this.lerpMultiplier = 0.005;
 		this.button = document.querySelector('.anim');
 		this.isStatic = true;
+		this.text = null;
 
 		// Init scene
 		this.scene = new THREE.Scene();
@@ -281,15 +281,23 @@ export default class Sketch {
 		this.text = new Text();
 		this.scene.add(this.text);
 
-		// Set properties to configure:
-		this.text.text = 'Creative web\ndeveloper';
+		this.text.addEventListener('synccomplete', () => {
+			console.log('Sync complete');
+
+			const letters = Array.from(this.text.name);
+		});
+
+		this.text.text = 'Creative web developer';
 		this.text.font = './fonts/Humane-Bold.ttf';
 		this.text.fontSize = 0.4;
 		this.text.position.z = -0.7;
+		this.text.maxWidth = 1.5;
 		this.text.anchorX = 'center';
 		this.text.anchorY = 'middle';
 		this.text.textAlign = 'center';
 		this.text.lineHeight = 1.1;
+		this.text.color = 0xe4f99e;
+		this.text.name = this.text.text;
 		this.text.color = 0xe4f99e;
 	}
 
