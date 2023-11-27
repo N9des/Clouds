@@ -1,5 +1,5 @@
 import * as THREE from 'three';
-import { MSDFTextGeometry, uniforms } from 'three-msdf-text-utils';
+import { Text } from 'troika-three-text';
 import { gsap } from 'gsap';
 import { ScrollTrigger } from 'gsap/ScrollTrigger';
 gsap.registerPlugin(ScrollTrigger);
@@ -84,7 +84,7 @@ export default class Sketch {
 
 		this.addLoader();
 
-		this.addControls();
+		// this.addControls();
 
 		this.addBg();
 
@@ -278,193 +278,19 @@ export default class Sketch {
 	}
 
 	textGeometry() {
-		const textGroup = new THREE.Group();
-		Promise.all([
-			loadFontAtlas('./fonts/humane.png'),
-			loadFont('./fonts/humane-msdf.fnt'),
-		]).then(([atlas, font]) => {
-			const creativeGeometry = new MSDFTextGeometry({
-				text: 'Creative web',
-				font: font.data,
-			});
+		this.text = new Text();
+		this.scene.add(this.text);
 
-			// const material = new MSDFTextMaterial({
-			// 	side: THREE.DoubleSide,
-			// });
-
-			const material = new THREE.ShaderMaterial({
-				side: THREE.DoubleSide,
-				transparent: true,
-				defines: {
-					IS_SMALL: false,
-				},
-				extensions: {
-					derivatives: true,
-				},
-				uniforms: {
-					// Common
-					...uniforms.common,
-
-					// Rendering
-					...uniforms.rendering,
-
-					// Strokes
-					...uniforms.strokes,
-				},
-				vertexShader: `
-						// Attribute
-						attribute vec2 layoutUv;
-		
-						attribute float lineIndex;
-		
-						attribute float lineLettersTotal;
-						attribute float lineLetterIndex;
-		
-						attribute float lineWordsTotal;
-						attribute float lineWordIndex;
-		
-						attribute float wordIndex;
-		
-						attribute float letterIndex;
-		
-						// Varyings
-						varying vec2 vUv;
-						varying vec2 vLayoutUv;
-						varying vec3 vViewPosition;
-						varying vec3 vNormal;
-		
-						varying float vLineIndex;
-		
-						varying float vLineLettersTotal;
-						varying float vLineLetterIndex;
-		
-						varying float vLineWordsTotal;
-						varying float vLineWordIndex;
-		
-						varying float vWordIndex;
-		
-						varying float vLetterIndex;
-		
-						void main() {
-								// Output
-								vec4 mvPosition = vec4(position, 1.0);
-								mvPosition = modelViewMatrix * mvPosition;
-								gl_Position = projectionMatrix * mvPosition;
-		
-								// Varyings
-								vUv = uv;
-								vLayoutUv = layoutUv;
-								vViewPosition = -mvPosition.xyz;
-								vNormal = normal;
-		
-								vLineIndex = lineIndex;
-		
-								vLineLettersTotal = lineLettersTotal;
-								vLineLetterIndex = lineLetterIndex;
-		
-								vLineWordsTotal = lineWordsTotal;
-								vLineWordIndex = lineWordIndex;
-		
-								vWordIndex = wordIndex;
-		
-								vLetterIndex = letterIndex;
-						}
-				`,
-				fragmentShader: `
-						// Varyings
-						varying vec2 vUv;
-		
-						// Uniforms: Common
-						uniform float uOpacity;
-						uniform float uThreshold;
-						uniform float uAlphaTest;
-						uniform vec3 uColor;
-						uniform sampler2D uMap;
-		
-						// Uniforms: Strokes
-						uniform vec3 uStrokeColor;
-						uniform float uStrokeOutsetWidth;
-						uniform float uStrokeInsetWidth;
-		
-						// Utils: Median
-						float median(float r, float g, float b) {
-								return max(min(r, g), min(max(r, g), b));
-						}
-		
-						void main() {
-								// Common
-								// Texture sample
-								vec3 s = texture2D(uMap, vUv).rgb;
-		
-								// Signed distance
-								float sigDist = median(s.r, s.g, s.b) - 0.5;
-		
-								float afwidth = 1.4142135623730951 / 2.0;
-		
-								#ifdef IS_SMALL
-										float alpha = smoothstep(uThreshold - afwidth, uThreshold + afwidth, sigDist);
-								#else
-										float alpha = clamp(sigDist / fwidth(sigDist) + 0.5, 0.0, 1.0);
-								#endif
-		
-								// Strokes
-								// Outset
-								float sigDistOutset = sigDist + uStrokeOutsetWidth * 0.5;
-		
-								// Inset
-								float sigDistInset = sigDist - uStrokeInsetWidth * 0.5;
-		
-								#ifdef IS_SMALL
-										float outset = smoothstep(uThreshold - afwidth, uThreshold + afwidth, sigDistOutset);
-										float inset = 1.0 - smoothstep(uThreshold - afwidth, uThreshold + afwidth, sigDistInset);
-								#else
-										float outset = clamp(sigDistOutset / fwidth(sigDistOutset) + 0.5, 0.0, 1.0);
-										float inset = 1.0 - clamp(sigDistInset / fwidth(sigDistInset) + 0.5, 0.0, 1.0);
-								#endif
-		
-								// Border
-								float border = outset * inset;
-		
-								// Alpha Test
-								if (alpha < uAlphaTest) discard;
-		
-								// Output: Common
-								vec4 filledFragColor = vec4(uColor, uOpacity * alpha);
-		
-								// Output: Strokes
-								vec4 strokedFragColor = vec4(uStrokeColor, uOpacity * border);
-		
-								gl_FragColor = filledFragColor;
-						}
-				`,
-			});
-			material.uniforms.uMap.value = atlas;
-
-			const creativeMesh = new THREE.Mesh(creativeGeometry, material);
-			textGroup.add(creativeMesh);
-			textGroup.scale.set(0.01, -0.01, 0.01);
-			textGroup.position.set(-0.5, 0, -0.6);
-
-			this.scene.add(textGroup);
-		});
-
-		function loadFontAtlas(path) {
-			const promise = new Promise((resolve, reject) => {
-				const loader = new THREE.TextureLoader();
-				loader.load(path, resolve);
-			});
-
-			return promise;
-		}
-
-		function loadFont(path) {
-			const promise = new Promise((resolve, reject) => {
-				const loader = new FontLoader();
-				loader.load(path, resolve);
-			});
-
-			return promise;
-		}
+		// Set properties to configure:
+		this.text.text = 'Creative web\ndeveloper';
+		this.text.font = './fonts/Humane-Bold.ttf';
+		this.text.fontSize = 0.4;
+		this.text.position.z = -0.7;
+		this.text.anchorX = 'center';
+		this.text.anchorY = 'middle';
+		this.text.textAlign = 'center';
+		this.text.lineHeight = 1.1;
+		this.text.color = 0xe4f99e;
 	}
 
 	addBalloon(mesh, posX = 0, index) {
@@ -751,6 +577,9 @@ export default class Sketch {
 		this.cannonDebugger && this.cannonDebugger.update();
 
 		this.onAnim();
+
+		// Update text
+		this.text && this.text.sync();
 
 		// Update controls
 		this.controls && this.controls.update();
