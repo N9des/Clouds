@@ -1,5 +1,5 @@
 import * as THREE from 'three';
-import { Text } from 'troika-three-text';
+import { Text, preloadFont } from 'troika-three-text';
 import { gsap } from 'gsap';
 import { ScrollTrigger } from 'gsap/ScrollTrigger';
 gsap.registerPlugin(ScrollTrigger);
@@ -132,6 +132,16 @@ export default class Sketch {
 			this.mouseMove.x = (event.clientX / this.sizes.width) * 2 - 1;
 			this.mouseMove.y = -(event.clientY / this.sizes.height) * 2 + 1;
 		});
+
+		preloadFont(
+			{
+				font: './fonts/Humane-Bold.ttf',
+			},
+			() => {
+				console.log('Font loaded');
+				this.textGeometry();
+			}
+		);
 	}
 
 	scrollTrigger() {
@@ -238,7 +248,7 @@ export default class Sketch {
 
 			this.onAnim();
 			this.scrollTrigger();
-			this.textGeometry();
+			// this.textGeometry();
 		});
 	}
 
