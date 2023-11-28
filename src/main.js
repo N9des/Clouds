@@ -235,7 +235,7 @@ export default class Sketch {
 			2,
 			0x0000ff
 		);
-		this.scene.add(helperPlane, helperPlaneBottom);
+		// this.scene.add(helperPlane, helperPlaneBottom);
 
 		this.fontLoader = new FontLoader();
 		const creativeTitle = Array.from('Creative');
