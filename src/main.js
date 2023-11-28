@@ -11,7 +11,7 @@ import { ShaderPass } from 'three/addons/postprocessing/ShaderPass.js';
 import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
 import * as CANNON from 'cannon-es';
 import CannonDebugger from 'cannon-es-debugger';
-import * as dat from 'lil-gui';
+import { GUI } from 'three/addons/libs/lil-gui.module.min.js';
 import Lenis from '@studio-freight/lenis';
 
 import { DotScreenShader } from './customShader';
@@ -20,8 +20,6 @@ import cloudsVertexShader from './shaders/cloudsVertex.glsl';
 import cloudsFragmentShader from './shaders/cloudsFragment.glsl';
 import bgVertexShader from './shaders/bgVertex.glsl';
 import bgFragmentShader from './shaders/bgFragment.glsl';
-
-import font from './fonts/humane.json';
 
 export default class Sketch {
 	constructor() {
@@ -39,6 +37,7 @@ export default class Sketch {
 		});
 		this.renderer.setSize(this.sizes.width, this.sizes.height);
 		this.renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+		this.renderer.localClippingEnabled = true;
 
 		// Utils
 		this.utils = {
@@ -68,7 +67,8 @@ export default class Sketch {
 		this.lerpMultiplier = 0.005;
 		this.button = document.querySelector('.anim');
 		this.isStatic = true;
-		this.titleCover = [];
+		this.titleCoverTop = [];
+		this.titleCoverBottom = [];
 		this.titleCoverGroup = new THREE.Group();
 
 		// Init scene
@@ -89,7 +89,7 @@ export default class Sketch {
 
 		this.addLoader();
 
-		// this.addControls();
+		this.addControls();
 
 		this.addBg();
 
@@ -136,6 +136,22 @@ export default class Sketch {
 		window.addEventListener('mousemove', (event) => {
 			this.mouseMove.x = (event.clientX / this.sizes.width) * 2 - 1;
 			this.mouseMove.y = -(event.clientY / this.sizes.height) * 2 + 1;
+		});
+
+		const button = document.querySelector('.anim');
+		button.addEventListener('click', () => {
+			gsap.to(this.titleCoverTop, {
+				y: -0.5,
+				duration: 0.8,
+				stagger: 0.2,
+				ease: 'power3.inOut',
+			});
+			gsap.to(this.titleCoverBottom, {
+				y: 0.5,
+				duration: 0.8,
+				stagger: 0.2,
+				ease: 'power3.inOut',
+			});
 		});
 	}
 
@@ -208,6 +224,19 @@ export default class Sketch {
 	}
 
 	addLoader() {
+		const localPlaneTop = new THREE.Plane(new THREE.Vector3(0, 1, 0), -0.08);
+		const helperPlane = new THREE.PlaneHelper(localPlaneTop, 2, 0xff0000);
+		const localPlaneBottom = new THREE.Plane(
+			new THREE.Vector3(0, -1, 0),
+			-0.08
+		);
+		const helperPlaneBottom = new THREE.PlaneHelper(
+			localPlaneBottom,
+			2,
+			0x0000ff
+		);
+		this.scene.add(helperPlane, helperPlaneBottom);
+
 		this.fontLoader = new FontLoader();
 		const creativeTitle = Array.from('Creative');
 		const webTitle = Array.from('web');
@@ -219,31 +248,46 @@ export default class Sketch {
 		];
 
 		this.fontLoader.load('./fonts/humane/humane.json', (font) => {
-			const material = new THREE.MeshStandardMaterial({
+			const materialTop = new THREE.MeshStandardMaterial({
 				color: 0xdbf38c,
+				clippingPlanes: [localPlaneTop],
+			});
+
+			const materialBottom = new THREE.MeshStandardMaterial({
+				color: 0xdbf38c,
+				clippingPlanes: [localPlaneBottom],
 			});
 
 			creativeTitle.forEach((letter, idx) => {
 				this.addTitleLetters(
 					letter,
-					material,
+					materialTop,
 					font,
 					creativeTitlePosX[idx],
-					0.1
+					0.1,
+					true
 				);
 			});
 
 			webTitle.forEach((letter, idx) => {
-				this.addTitleLetters(letter, material, font, webTitlePosX[idx], 0.1);
+				this.addTitleLetters(
+					letter,
+					materialTop,
+					font,
+					webTitlePosX[idx],
+					0.1,
+					true
+				);
 			});
 
 			developerTitle.forEach((letter, idx) => {
 				this.addTitleLetters(
 					letter,
-					material,
+					materialBottom,
 					font,
 					developerTitlePosX[idx],
-					-0.38
+					-0.38,
+					false
 				);
 			});
 
@@ -324,7 +368,7 @@ export default class Sketch {
 		this.scene.add(this.ambientLight);
 	}
 
-	addTitleLetters(letter, material, font, posX, posY) {
+	addTitleLetters(letter, material, font, posX, posY, position) {
 		const letterGeometry = new TextGeometry(letter, {
 			font: font,
 			size: 0.29,
@@ -334,6 +378,12 @@ export default class Sketch {
 		const letterMesh = new THREE.Mesh(letterGeometry, material);
 		this.titleCoverGroup.add(letterMesh);
 		letterMesh.position.set(posX, posY, -0.7);
+
+		if (position) {
+			this.titleCoverTop.push(letterMesh.position);
+		} else {
+			this.titleCoverBottom.push(letterMesh.position);
+		}
 	}
 
 	addBalloon(mesh, posX = 0, index) {
@@ -553,7 +603,7 @@ export default class Sketch {
 	}
 
 	addDebug() {
-		// const gui = new dat.GUI();
+		// const gui = new GUI();
 		// this.cannonDebugger = new CannonDebugger(this.scene, this.world, {});
 	}
 
