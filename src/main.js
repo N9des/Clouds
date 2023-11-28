@@ -1,5 +1,6 @@
 import * as THREE from 'three';
-import { Text, preloadFont } from 'troika-three-text';
+import { TextGeometry } from 'three/addons/geometries/TextGeometry.js';
+import { FontLoader } from 'three/addons/loaders/FontLoader.js';
 import { gsap } from 'gsap';
 import { ScrollTrigger } from 'gsap/ScrollTrigger';
 gsap.registerPlugin(ScrollTrigger);
@@ -36,6 +37,7 @@ export default class Sketch {
 		});
 		this.renderer.setSize(this.sizes.width, this.sizes.height);
 		this.renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+
 		// Utils
 		this.utils = {
 			rand: (min, max) => Math.random() * (max - min) + min,
@@ -64,7 +66,8 @@ export default class Sketch {
 		this.lerpMultiplier = 0.005;
 		this.button = document.querySelector('.anim');
 		this.isStatic = true;
-		this.text = null;
+		this.titleCover = [];
+		this.titleCoverGroup = new THREE.Group();
 
 		// Init scene
 		this.scene = new THREE.Scene();
@@ -132,16 +135,6 @@ export default class Sketch {
 			this.mouseMove.x = (event.clientX / this.sizes.width) * 2 - 1;
 			this.mouseMove.y = -(event.clientY / this.sizes.height) * 2 + 1;
 		});
-
-		preloadFont(
-			{
-				font: './fonts/Humane-Bold.ttf',
-			},
-			() => {
-				console.log('Font loaded');
-				this.textGeometry();
-			}
-		);
 	}
 
 	scrollTrigger() {
@@ -213,6 +206,49 @@ export default class Sketch {
 	}
 
 	addLoader() {
+		this.fontLoader = new FontLoader();
+		const creativeTitle = Array.from('Creative');
+		const webTitle = Array.from('web');
+		const developerTitle = Array.from('developer');
+		const creativeTitlePosX = [0.03, 0.13, 0.22, 0.31, 0.4, 0.465, 0.515, 0.61];
+		const webTitlePosX = [0.755, 0.91, 1];
+		const developerTitlePosX = [
+			0.155, 0.252, 0.345, 0.445, 0.54, 0.59, 0.685, 0.78, 0.875,
+		];
+
+		this.fontLoader.load('./fonts/humane.json', (font) => {
+			const material = new THREE.MeshStandardMaterial({
+				color: 0xdbf38c,
+			});
+
+			creativeTitle.forEach((letter, idx) => {
+				this.addTitleLetters(
+					letter,
+					material,
+					font,
+					creativeTitlePosX[idx],
+					0.1
+				);
+			});
+
+			webTitle.forEach((letter, idx) => {
+				this.addTitleLetters(letter, material, font, webTitlePosX[idx], 0.1);
+			});
+
+			developerTitle.forEach((letter, idx) => {
+				this.addTitleLetters(
+					letter,
+					material,
+					font,
+					developerTitlePosX[idx],
+					-0.38
+				);
+			});
+
+			this.scene.add(this.titleCoverGroup);
+			this.titleCoverGroup.position.x = -0.55;
+		});
+
 		this.textureLoader = new THREE.TextureLoader();
 		this.cloudsTexture = this.textureLoader.load('/images/cloud.png');
 		this.clouds2Texture = this.textureLoader.load('/images/cloud_2.png');
@@ -248,7 +284,6 @@ export default class Sketch {
 
 			this.onAnim();
 			this.scrollTrigger();
-			// this.textGeometry();
 		});
 	}
 
@@ -287,28 +322,16 @@ export default class Sketch {
 		this.scene.add(this.ambientLight);
 	}
 
-	textGeometry() {
-		this.text = new Text();
-		this.scene.add(this.text);
-
-		this.text.addEventListener('synccomplete', () => {
-			console.log('Sync complete');
-
-			const letters = Array.from(this.text.name);
+	addTitleLetters(letter, material, font, posX, posY) {
+		const letterGeometry = new TextGeometry(letter, {
+			font: font,
+			size: 0.29,
+			height: 0,
 		});
 
-		this.text.text = 'Creative web developer';
-		this.text.font = './fonts/Humane-Bold.ttf';
-		this.text.fontSize = 0.4;
-		this.text.position.z = -0.7;
-		this.text.maxWidth = 1.5;
-		this.text.anchorX = 'center';
-		this.text.anchorY = 'middle';
-		this.text.textAlign = 'center';
-		this.text.lineHeight = 1.1;
-		this.text.color = 0xe4f99e;
-		this.text.name = this.text.text;
-		this.text.color = 0xe4f99e;
+		const letterMesh = new THREE.Mesh(letterGeometry, material);
+		this.titleCoverGroup.add(letterMesh);
+		letterMesh.position.set(posX, posY, -0.7);
 	}
 
 	addBalloon(mesh, posX = 0, index) {
@@ -597,7 +620,7 @@ export default class Sketch {
 		this.onAnim();
 
 		// Update text
-		this.text && this.text.sync();
+		// this.text && this.text.sync();
 
 		// Update controls
 		this.controls && this.controls.update();
