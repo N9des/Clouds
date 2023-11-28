@@ -21,6 +21,8 @@ import cloudsFragmentShader from './shaders/cloudsFragment.glsl';
 import bgVertexShader from './shaders/bgVertex.glsl';
 import bgFragmentShader from './shaders/bgFragment.glsl';
 
+import font from './fonts/humane.json';
+
 export default class Sketch {
 	constructor() {
 		// Sizes
@@ -216,7 +218,7 @@ export default class Sketch {
 			0.155, 0.252, 0.345, 0.445, 0.54, 0.59, 0.685, 0.78, 0.875,
 		];
 
-		this.fontLoader.load('./fonts/humane.json', (font) => {
+		this.fontLoader.load('./fonts/humane/humane.json', (font) => {
 			const material = new THREE.MeshStandardMaterial({
 				color: 0xdbf38c,
 			});
