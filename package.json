@@ -16,7 +16,6 @@
     "cannon-es": "^0.20.0",
     "cannon-es-debugger": "^1.0.0",
     "gsap": "^3.12.2",
-    "lil-gui": "^0.18.2",
     "prettier": "^3.0.3",
     "sass": "^1.68.0",
     "three": "^0.156.1",
