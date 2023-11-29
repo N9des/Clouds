@@ -139,19 +139,39 @@ export default class Sketch {
 		});
 
 		const button = document.querySelector('.anim');
+		const tl = gsap.timeline({
+			duration: 1,
+			ease: 'power1.inOut',
+		});
 		button.addEventListener('click', () => {
-			gsap.to(this.titleCoverTop, {
+			tl.to(this.titleMeshTop.position, {
 				y: -0.5,
-				duration: 0.6,
-				stagger: 0.1,
-				ease: 'power3.inOut',
-			});
-			gsap.to(this.titleCoverBottom, {
-				y: 0.5,
-				duration: 0.6,
-				stagger: 0.1,
-				ease: 'power3.inOut',
-			});
+				duration: 1.5,
+			})
+				.to(
+					this.titleMeshBottom.position,
+					{
+						y: 0.5,
+						duration: 1.5,
+					},
+					'<'
+				)
+				.to(
+					this.titleMeshTop.rotation,
+					{
+						z: -0.2,
+						duration: 1.5,
+					},
+					'<'
+				)
+				.to(
+					this.titleMeshBottom.rotation,
+					{
+						z: -0.2,
+						duration: 1.5,
+					},
+					'<'
+				);
 		});
 	}
 
@@ -258,41 +278,33 @@ export default class Sketch {
 				clippingPlanes: [localPlaneBottom],
 			});
 
-			creativeTitle.forEach((letter, idx) => {
-				this.addTitleLetters(
-					letter,
-					materialTop,
-					font,
-					creativeTitlePosX[idx],
-					0.1,
-					true
-				);
+			const titleTopGeometry = new TextGeometry('Creative web', {
+				font: font,
+				size: 0.29,
+				height: 0,
 			});
 
-			webTitle.forEach((letter, idx) => {
-				this.addTitleLetters(
-					letter,
-					materialTop,
-					font,
-					webTitlePosX[idx],
-					0.1,
-					true
-				);
+			const titleBottomGeometry = new TextGeometry('developer', {
+				font: font,
+				size: 0.29,
+				height: 0,
 			});
 
-			developerTitle.forEach((letter, idx) => {
-				this.addTitleLetters(
-					letter,
-					materialBottom,
-					font,
-					developerTitlePosX[idx],
-					-0.38,
-					false
-				);
-			});
+			this.titleMeshTop = new THREE.Mesh(titleTopGeometry, materialTop);
+			this.titleMeshTop.position.y = 0.1;
+			this.titleCoverGroup.add(this.titleMeshTop);
+
+			this.titleMeshBottom = new THREE.Mesh(
+				titleBottomGeometry,
+				materialBottom
+			);
+			this.titleMeshBottom.position.y = -0.35;
+			this.titleMeshBottom.position.x = 0.15;
+			this.titleCoverGroup.add(this.titleMeshBottom);
 
 			this.scene.add(this.titleCoverGroup);
 			this.titleCoverGroup.position.x = -0.55;
+			this.titleCoverGroup.position.z = -0.7;
 		});
 
 		this.textureLoader = new THREE.TextureLoader();
