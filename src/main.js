@@ -144,12 +144,12 @@ export default class Sketch {
 			ease: 'power1.inOut',
 		});
 		button.addEventListener('click', () => {
-			tl.to(this.titleMeshTop.position, {
+			tl.to(this.titleCoverTop.position, {
 				y: -0.5,
 				duration: 1.5,
 			})
 				.to(
-					this.titleMeshBottom.position,
+					this.titleCoverBottom.position,
 					{
 						y: 0.5,
 						duration: 1.5,
@@ -157,7 +157,7 @@ export default class Sketch {
 					'<'
 				)
 				.to(
-					this.titleMeshTop.rotation,
+					this.titleCoverTop.rotation,
 					{
 						z: -0.2,
 						duration: 1.5,
@@ -165,7 +165,7 @@ export default class Sketch {
 					'<'
 				)
 				.to(
-					this.titleMeshBottom.rotation,
+					this.titleCoverBottom.rotation,
 					{
 						z: -0.2,
 						duration: 1.5,
@@ -271,36 +271,17 @@ export default class Sketch {
 			const materialTop = new THREE.MeshStandardMaterial({
 				color: 0xdbf38c,
 				clippingPlanes: [localPlaneTop],
+				name: 'top',
 			});
 
 			const materialBottom = new THREE.MeshStandardMaterial({
 				color: 0xdbf38c,
 				clippingPlanes: [localPlaneBottom],
+				name: 'bottom',
 			});
 
-			const titleTopGeometry = new TextGeometry('Creative web', {
-				font: font,
-				size: 0.29,
-				height: 0,
-			});
-
-			const titleBottomGeometry = new TextGeometry('developer', {
-				font: font,
-				size: 0.29,
-				height: 0,
-			});
-
-			this.titleMeshTop = new THREE.Mesh(titleTopGeometry, materialTop);
-			this.titleMeshTop.position.y = 0.1;
-			this.titleCoverGroup.add(this.titleMeshTop);
-
-			this.titleMeshBottom = new THREE.Mesh(
-				titleBottomGeometry,
-				materialBottom
-			);
-			this.titleMeshBottom.position.y = -0.35;
-			this.titleMeshBottom.position.x = 0.15;
-			this.titleCoverGroup.add(this.titleMeshBottom);
+			this.addTitles('Creative web', materialTop, font, 0, 0.1);
+			this.addTitles('developer', materialBottom, font, 0.15, -0.35);
 
 			this.scene.add(this.titleCoverGroup);
 			this.titleCoverGroup.position.x = -0.55;
@@ -378,6 +359,24 @@ export default class Sketch {
 		const intensityAmbient = 2;
 		this.ambientLight = new THREE.AmbientLight(white, intensityAmbient);
 		this.scene.add(this.ambientLight);
+	}
+
+	addTitles(title, material, font, posX, posY) {
+		const titleGeometry = new TextGeometry(title, {
+			font: font,
+			size: 0.29,
+			height: 0,
+		});
+
+		const titleMesh = new THREE.Mesh(titleGeometry, material);
+		titleMesh.position.set(posX, posY, 0);
+		this.titleCoverGroup.add(titleMesh);
+
+		if (material.name === 'top') {
+			this.titleCoverTop = titleMesh;
+		} else {
+			this.titleCoverBottom = titleMesh;
+		}
 	}
 
 	addTitleLetters(letter, material, font, posX, posY, position) {
