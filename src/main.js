@@ -89,7 +89,7 @@ export default class Sketch {
 
 		this.addLoader();
 
-		this.addControls();
+		// this.addControls();
 
 		this.addBg();
 
@@ -142,14 +142,14 @@ export default class Sketch {
 		button.addEventListener('click', () => {
 			gsap.to(this.titleCoverTop, {
 				y: -0.5,
-				duration: 0.8,
-				stagger: 0.2,
+				duration: 0.6,
+				stagger: 0.1,
 				ease: 'power3.inOut',
 			});
 			gsap.to(this.titleCoverBottom, {
 				y: 0.5,
-				duration: 0.8,
-				stagger: 0.2,
+				duration: 0.6,
+				stagger: 0.1,
 				ease: 'power3.inOut',
 			});
 		});
